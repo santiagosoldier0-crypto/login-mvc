@@ -31,7 +31,7 @@ public class LoginUITest {
 
     private String baseUrl;
     // URL del Selenium Hub, accesible desde el agente de Jenkins (Docker Host)
-    private static final String SELENIUM_HUB_URL = "http://localhost:4444/wd/hub";
+    private static final String SELENIUM_HUB_URL = "http://selenium-hub:4444/wd/hub";
 
     @BeforeAll 
     static void setupClass() {
