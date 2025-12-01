@@ -19,13 +19,15 @@ public class LoginUITest {
 
     private WebDriver driver;
     
+    // Puerto fijo para la aplicación
     private final int fixedPort = 8082;
     
-    // CORRECCIÓN CLAVE: Usamos @Value para inyectar el host definido por Maven (app-test)
-    // El valor por defecto ahora es host.docker.internal, aunque 'app-test' es el deseado
-    @Value("${app.host.name:host.docker.internal}")
+    // CORRECCIÓN CLAVE: El valor por defecto es ahora 'app-test', 
+    // el nombre resoluble del contenedor de la aplicación en la red de Docker.
+    @Value("${app.host.name:app-test}") 
     private String appHostName; 
 
+    // Host del Selenium Hub, pasado desde Jenkins
     @Value("${selenium.hub.host:selenium-hub}")
     private String seleniumHubHost;
     
@@ -35,15 +37,15 @@ public class LoginUITest {
     @BeforeEach
     void setupTest() throws Exception {
         
-        // 1. Configurar la URL del Hub
+        // 1. Configurar la URL del Hub de Selenium
         SELENIUM_HUB_URL = "http://" + seleniumHubHost + ":4444/wd/hub";
         
-        // 2. Configurar el WebDriver
+        // 2. Configurar el WebDriver para Chrome Headless
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless", "--no-sandbox", "--disable-dev-shm-usage");
         options.setAcceptInsecureCerts(true);
 
-        // Intentar hasta 3 veces para conectar al Selenium Hub
+        // 3. Inicializar RemoteWebDriver con reintentos para manejar el arranque de Selenium Grid
         int maxAttempts = 3;
         int currentAttempt = 0;
         Exception lastException = null;
@@ -51,7 +53,7 @@ public class LoginUITest {
         while (currentAttempt < maxAttempts) {
             try {
                 driver = new RemoteWebDriver(new URL(SELENIUM_HUB_URL), options);
-                break; // Éxito
+                break; // Conexión exitosa
             } catch (Exception e) {
                 lastException = e;
                 currentAttempt++;
@@ -66,7 +68,7 @@ public class LoginUITest {
 
         driver.manage().window().maximize();
 
-        // 3. Configurar la Base URL para la prueba
+        // 4. Configurar la Base URL de la aplicación
         baseUrl = "http://" + appHostName + ":" + fixedPort + "/";
         
         System.out.println("DEBUG: App Base URL para la prueba UI: " + baseUrl);
@@ -82,7 +84,7 @@ public class LoginUITest {
     @Test
     void testLogin_CredencialesValidas_DebeIrAHome() {
         driver.get(baseUrl);
-        // ... (resto del test)
+        // Lógica de interacción para credenciales válidas
         driver.findElement(By.name("username")).sendKeys("admin");
         driver.findElement(By.name("password")).sendKeys("password123");
         driver.findElement(By.tagName("button")).click();
@@ -94,7 +96,7 @@ public class LoginUITest {
     @Test
     void testLogin_CredencialesInvalidas_DebeMostrarMensajeDeError() {
         driver.get(baseUrl);
-        // ... (resto del test)
+        // Lógica de interacción para credenciales inválidas
         driver.findElement(By.name("username")).sendKeys("usuario-malo");
         driver.findElement(By.name("password")).sendKeys("clave-incorrecta");
         driver.findElement(By.tagName("button")).click();
