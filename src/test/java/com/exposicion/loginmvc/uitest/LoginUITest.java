@@ -23,7 +23,8 @@ public class LoginUITest {
     private final int fixedPort = 8082; 
     
     // Lee el host (que es "jenkins_practica" pasado por el script bash)
-    private final String appHostName = "host.docker.internal";
+    // private final String appHostName = "host.docker.internal";
+    private final String appHostName = System.getProperty("app.host.name", "localhost");
 
 
     @Value("${selenium.hub.host:selenium-hub}")
