@@ -1,6 +1,6 @@
 package com.exposicion.loginmvc.uitest;
 
-import java.net.URL; 
+import java.net.URL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,28 +10,27 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-// d
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// CORRECCIÓN CLAVE: Usamos DEFINED_PORT para forzar el uso de server.port=8082
+// Usamos DEFINED_PORT para asegurar que Spring Boot levante la app en 8082
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class LoginUITest {
 
     private WebDriver driver;
     
-    // El puerto ahora es fijo (8082) y ya no se inyecta con @LocalServerPort
-    private final int fixedPort = 8082; 
+    private final int fixedPort = 8082;
     
-    // Lee el host (que es "jenkins_practica" pasado por el script bash)
-    // private final String appHostName = "host.docker.internal";
-    private final String appHostName = System.getProperty("app.host.name", "localhost");
-
+    // CORRECCIÓN CLAVE: Usamos @Value para inyectar el host definido por Maven (app-test)
+    // El valor por defecto ahora es host.docker.internal, aunque 'app-test' es el deseado
+    @Value("${app.host.name:host.docker.internal}")
+    private String appHostName; 
 
     @Value("${selenium.hub.host:selenium-hub}")
     private String seleniumHubHost;
     
     private String SELENIUM_HUB_URL;
-    private String baseUrl; // Se inicializará con el puerto fijo
+    private String baseUrl;
 
     @BeforeEach
     void setupTest() throws Exception {
@@ -44,11 +43,30 @@ public class LoginUITest {
         options.addArguments("--headless", "--no-sandbox", "--disable-dev-shm-usage");
         options.setAcceptInsecureCerts(true);
 
-        driver = new RemoteWebDriver(new URL(SELENIUM_HUB_URL), options);
+        // Intentar hasta 3 veces para conectar al Selenium Hub
+        int maxAttempts = 3;
+        int currentAttempt = 0;
+        Exception lastException = null;
+
+        while (currentAttempt < maxAttempts) {
+            try {
+                driver = new RemoteWebDriver(new URL(SELENIUM_HUB_URL), options);
+                break; // Éxito
+            } catch (Exception e) {
+                lastException = e;
+                currentAttempt++;
+                System.out.println("ADVERTENCIA: Falló conexión con Selenium Hub. Intento " + currentAttempt + "/" + maxAttempts + ". Esperando 2 segundos...");
+                Thread.sleep(2000);
+            }
+        }
+
+        if (driver == null) {
+            throw new RuntimeException("Fallo al inicializar RemoteWebDriver después de " + maxAttempts + " intentos.", lastException);
+        }
+
         driver.manage().window().maximize();
 
         // 3. Configurar la Base URL para la prueba
-        // CORRECCIÓN: Usamos el puerto fijo 8082
         baseUrl = "http://" + appHostName + ":" + fixedPort + "/";
         
         System.out.println("DEBUG: App Base URL para la prueba UI: " + baseUrl);
@@ -64,7 +82,7 @@ public class LoginUITest {
     @Test
     void testLogin_CredencialesValidas_DebeIrAHome() {
         driver.get(baseUrl);
-
+        // ... (resto del test)
         driver.findElement(By.name("username")).sendKeys("admin");
         driver.findElement(By.name("password")).sendKeys("password123");
         driver.findElement(By.tagName("button")).click();
@@ -76,7 +94,7 @@ public class LoginUITest {
     @Test
     void testLogin_CredencialesInvalidas_DebeMostrarMensajeDeError() {
         driver.get(baseUrl);
-
+        // ... (resto del test)
         driver.findElement(By.name("username")).sendKeys("usuario-malo");
         driver.findElement(By.name("password")).sendKeys("clave-incorrecta");
         driver.findElement(By.tagName("button")).click();
