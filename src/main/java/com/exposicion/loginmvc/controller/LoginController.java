@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  * Controlador que maneja las peticiones HTTP para el login. Delega la lógica de
  * autenticación al AuthService.
  */
+/**Hola mundo**/
 @Controller
 public class LoginController {
 
